@@ -11,7 +11,7 @@ import (
 const (
 	HOST = "127.0.0.1"
 	PORT = "80"
-	NET  = "tcp"
+	TYPE = "tcp"
 )
 
 type Connections struct {
@@ -54,17 +54,19 @@ func (c *Connections) Read(key string) *net.TCPConn {
 }
 
 func main() {
-	addr, err := net.ResolveTCPAddr(NET, HOST+":"+PORT)
+	addr, err := net.ResolveTCPAddr(TYPE, HOST+":"+PORT)
 	handleError(err)
 
-	tcpListener, err := net.ListenTCP(NET, addr)
+	tcpListener, err := net.ListenTCP(TYPE, addr)
 	handleError(err)
 	defer tcpListener.Close()
+
+	var broadcaster = make(chan byte)
+	defer close(broadcaster)
 
 	c := &Connections{
 		connections: make(map[string]*net.TCPConn),
 	}
-	// todo create broudcaster and ch
 
 	fmt.Println("Listening on " + HOST + ":" + PORT)
 
@@ -73,8 +75,12 @@ func main() {
 		handleError(err)
 		c.New(conn.RemoteAddr().String(), conn)
 
-		// todo handle request
+		handleRequest(conn)
 	}
+}
+
+func handleRequest(conn *net.TCPConn) {
+	fmt.Println("New connection " + conn.RemoteAddr().String())
 }
 
 func handleError(err error) {
