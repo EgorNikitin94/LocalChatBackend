@@ -75,12 +75,26 @@ func main() {
 		handleError(err)
 		c.New(conn.RemoteAddr().String(), conn)
 
-		handleRequest(conn)
+		go handleRequest(conn)
 	}
 }
 
 func handleRequest(conn *net.TCPConn) {
+	defer conn.Close()
 	fmt.Println("New connection " + conn.RemoteAddr().String())
+
+	for {
+		buff := make([]byte, 2048)
+		fmt.Println("New message from connection:" + conn.RemoteAddr().String())
+		_, err := conn.Read(buff)
+
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
 }
 
 func handleError(err error) {
