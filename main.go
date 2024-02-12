@@ -1,7 +1,9 @@
 package main
 
 import (
+	"LocalChatBackend/proto/localChatpb"
 	"fmt"
+	"google.golang.org/protobuf/proto"
 	"log"
 	"net"
 	"os"
@@ -92,6 +94,10 @@ func handleRequest(conn *net.TCPConn) {
 			log.Println(err)
 			return
 		}
+
+		req := &localChatpb.Request{}
+		proto.Unmarshal(buff, req)
+		fmt.Println(req.GetPayload())
 	}
 
 	return
