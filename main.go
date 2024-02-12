@@ -3,6 +3,7 @@ package main
 import (
 	"LocalChatBackend/proto/localChatpb"
 	"fmt"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"log"
 	"net"
@@ -98,6 +99,18 @@ func handleRequest(conn *net.TCPConn) {
 		req := &localChatpb.Request{}
 		proto.Unmarshal(buff, req)
 		fmt.Println(req.GetPayload())
+
+		sysIninted := &localChatpb.SysInited{Pts: 1, SeeesionId: uuid.NewString()}
+		response := &localChatpb.Response{
+			Id:      req.GetId(),
+			Payload: &localChatpb.Response_SysInited{SysInited: sysIninted},
+		}
+		out, err := proto.Marshal(response)
+		if err != nil {
+			log.Fatalln("Failed to encode address book:", err)
+		}
+		fmt.Println("Send Response")
+		conn.Write(out)
 	}
 
 	return
