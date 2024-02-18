@@ -2,6 +2,7 @@ package main
 
 import (
 	"LocalChatBackend/proto/localChatpb"
+	"encoding/binary"
 	"fmt"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -12,9 +13,10 @@ import (
 )
 
 const (
-	HOST = "localhost"
-	PORT = "8080"
-	TYPE = "tcp"
+	HOST         = "localhost"
+	PORT         = "8080"
+	TYPE         = "tcp"
+	HeaderLength = 5
 )
 
 type Connections struct {
@@ -95,9 +97,11 @@ func handleRequest(conn *net.TCPConn) {
 			log.Println(err)
 			return
 		}
-
+		requestHeader := buff[:HeaderLength]
+		bodySize, _ := binary.Uvarint(requestHeader)
+		requestData := buff[HeaderLength : HeaderLength+bodySize+1]
 		req := &localChatpb.Request{}
-		proto.Unmarshal(buff, req)
+		proto.Unmarshal(requestData, req)
 		fmt.Println(req.GetPayload())
 
 		sysIninted := &localChatpb.SysInited{Pts: 1, SeeesionId: uuid.NewString()}
@@ -109,8 +113,11 @@ func handleRequest(conn *net.TCPConn) {
 		if err != nil {
 			log.Fatalln("Failed to encode address book:", err)
 		}
-		fmt.Println("Send Response")
-		conn.Write(out)
+		responseHeader := make([]byte, HeaderLength)
+		fmt.Println(response.GetPayload())
+		binary.PutUvarint(responseHeader, uint64(len(out)))
+		responseBytes := append(responseHeader, out...)
+		conn.Write(responseBytes)
 	}
 
 	return
