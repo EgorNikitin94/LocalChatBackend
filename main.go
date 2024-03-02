@@ -1,7 +1,7 @@
 package main
 
 import (
-	"LocalChatBackend/proto/localChatpb"
+	"LocalChatBackend/proto/pb"
 	"encoding/binary"
 	"fmt"
 	"github.com/google/uuid"
@@ -100,14 +100,14 @@ func handleRequest(conn *net.TCPConn) {
 		requestHeader := buff[:HeaderLength]
 		bodySize, _ := binary.Uvarint(requestHeader)
 		requestData := buff[HeaderLength : HeaderLength+bodySize+1]
-		req := &localChatpb.Request{}
+		req := &pb.Request{}
 		proto.Unmarshal(requestData, req)
 		fmt.Println(req.GetPayload())
 
-		sysIninted := &localChatpb.SysInited{Pts: 1, SeeesionId: uuid.NewString()}
-		response := &localChatpb.Response{
+		sysIninted := &pb.SysInited{Pts: 1, SessionId: uuid.NewString()}
+		response := &pb.Response{
 			Id:      req.GetId(),
-			Payload: &localChatpb.Response_SysInited{SysInited: sysIninted},
+			Payload: &pb.Response_SysInited{SysInited: sysIninted},
 		}
 		out, err := proto.Marshal(response)
 		if err != nil {
