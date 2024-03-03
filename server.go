@@ -80,28 +80,31 @@ func main() {
 		handleError(err)
 		c.New(conn.RemoteAddr().String(), conn)
 
-		go handleRequest(conn)
+		go handleConnection(conn)
 	}
 }
 
-func handleRequest(conn *net.TCPConn) {
+func handleConnection(conn *net.TCPConn) {
 	defer conn.Close()
 	fmt.Println("New connection " + conn.RemoteAddr().String())
 
 	for {
-		buff := make([]byte, 2048)
+		headerBuffer := make([]byte, HeaderLength)
 		fmt.Println("New message from connection:" + conn.RemoteAddr().String())
-		_, err := conn.Read(buff)
-
-		if err != nil {
-			log.Println(err)
+		if _, errRedHeader := conn.Read(headerBuffer); errRedHeader != nil {
+			log.Println(errRedHeader)
 			return
 		}
-		requestHeader := buff[:HeaderLength]
-		bodySize, _ := binary.Uvarint(requestHeader)
-		requestData := buff[HeaderLength : HeaderLength+bodySize+1]
+
+		bodySize, _ := binary.Uvarint(headerBuffer)
+		requestBuffer := make([]byte, bodySize)
+		if _, errReadReq := conn.Read(requestBuffer); errReadReq != nil {
+			log.Println(errReadReq)
+			return
+		}
+
 		req := &pb.Request{}
-		proto.Unmarshal(requestData, req)
+		proto.Unmarshal(requestBuffer, req)
 		fmt.Println(req.GetPayload())
 
 		sysIninted := &pb.SysInited{Pts: 1, SessionId: uuid.NewString()}
